@@ -1,0 +1,123 @@
+---
+title: "Machine Learning"
+author: "Joel Calixto"
+date: "31 de julio de 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr);library("dplyr");library(caret);library(randomForest);
+library(rattle);
+```
+## Machine Learning Project
+
+##Executive Summary
+From the dataset get from groupware.les.inf.puc-rio.br/har we need generate a model for the project of Machine Learning and answer 20 question from there. I generate two models by this section , one for Descision Trees and other for Random Forest.
+
+The data was get from this url
+
+The training data for this project are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har.
+
+
+```{r load}
+library(knitr);library("dplyr");library(caret);library(randomForest);
+library(rattle); library(AppliedPredictiveModeling);
+library(rpart);library(rpart.plot);
+library(plyr);library(dplyr);
+set.seed(1307);
+```
+
+#Data load
+First prepare data loading from url
+```{r load1}
+Url_for_train <-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+Url_for_test <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+train <- "pml-training.csv"
+test  <- "pml-testing.csv"
+if (!file.exists("./data")) {
+    dir.create("./data")
+}
+if (!file.exists(train)) {
+    download.file(Url_for_train, destfile=paste("./data/",train), method="curl")
+}
+if (!file.exists(test)) {
+    download.file(Url_for_test, destfile=paste("./data/",test), method="curl")
+}
+```
+
+load data from local disk
+```{r load2}
+#reuse var for load local data in enviroment
+training <- read.csv(paste("./data/","pml-training.csv"), na.strings = c("NA", "#DIV/0!", ""))
+testing  <- read.csv(paste("./data/","pml-testing.csv"), na.strings = c("NA", "#DIV/0!", ""))
+```
+
+#clean data, avoid NA columns from dataSet 
+```{r load3}
+##str(training);str(testing)
+dim(training); dim(testing)
+
+trainning_clear<-training[, colSums(is.na(testing))==0]
+testing_clear<-testing[,colSums(is.na(testing))==0]
+```
+remove col irrelevants for our analysis
+```{r load4}
+trainning_clear  <- trainning_clear[, -c(1:7)]
+testing_clear   <- testing_clear[, -c(1:7)]
+```
+check new data set dimensions
+```{r load5}
+dim(trainning_clear); dim(testing_clear)
+```
+generate a partition for new trainning and testing dataset
+```{r load6}
+trainning_with_partition<-createDataPartition(trainning_clear$classe,p=0.75,list=FALSE)
+trainning_for_work<-trainning_clear[trainning_with_partition,]
+testing_for_work<-trainning_clear[-trainning_with_partition,]
+```
+#Model selection 
+
+first probe Descision Trees
+```{r load7}
+#create a a model of desicion trees
+DT_model<-rpart(classe~. , trainning_for_work, method="class")
+#check a plot for this model
+fancyRpartPlot(DT_model)
+#generate a prediction - evaluate a model 
+compare_dt<- predict( DT_model, testing_for_work, type="class")
+#calculate the accuracy
+confusion_compare_dt<-confusionMatrix(compare_dt, testing_for_work$classe)
+confusion_compare_dt
+```
+with the descision tree model we can see an accuracy of 76.04% and a sample error of 00.31
+
+Now we generate a Random Forest model
+```{r load8}
+#generate a model
+RF_model<-randomForest(classe~. , trainning_for_work, method="class")
+#generate a prediction - evaluate a model 
+compare_rf<-predict(RF_model, testing_for_work, type = "class")
+#calculate the accuracy
+confusion_compare_rf<-confusionMatrix(compare_rf,testing_for_work$classe)
+confusion_compare_rf
+```
+with the random forest we have a 99.63% of accuracy and 0.0046 
+
+#Conclusion
+For the accuracy level of Random Forest we choose this model over descisions tree
+
+#Answers for quiz
+check answers for quiz of project
+Finally generate a answer for quiz
+```{r load9}
+final<-predict(RF_model, testing_clear)
+final
+```
+
